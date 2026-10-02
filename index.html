@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="refresh" content="60">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>복도 모니터 테스트</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@700&display=swap">
+<style>
+  html, body { margin: 0; padding: 0; background: #0b1530; color: #ffffff; }
+  body { font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; width: 1920px; height: 1080px; overflow: hidden; }
+  .top { height: 150px; background: #12224a; border-bottom: 4px solid #f5c542; }
+  .top td { vertical-align: middle; padding: 0 30px; }
+  .title { font-size: 40px; color: #f5c542; font-weight: bold; }
+  .clock { font-size: 96px; font-weight: bold; text-align: center; }
+  .refresh { font-size: 30px; text-align: right; color: #9fd3ff; }
+  .main { width: 100%; border-collapse: collapse; }
+  .panel { vertical-align: top; padding: 20px 30px; }
+  h2 { font-size: 34px; color: #f5c542; margin: 0 0 12px 0; border-bottom: 2px solid #f5c542; padding-bottom: 6px; }
+  table.info { border-collapse: collapse; width: 100%; }
+  table.info td { font-size: 26px; padding: 5px 8px; border-bottom: 1px solid #2a3d6e; }
+  table.info td.k { color: #9fd3ff; width: 300px; white-space: nowrap; }
+  .ok { color: #5ee08a; font-weight: bold; }
+  .ng { color: #ff6b6b; font-weight: bold; }
+  .wait { color: #f5c542; font-weight: bold; }
+  .ua { font-size: 18px; color: #c9d4ee; word-break: break-all; }
+  table.tt { border-collapse: separate; border-spacing: 6px; width: 100%; }
+  table.tt td { background: #1c3168; text-align: center; height: 78px; width: 12%; }
+  table.tt td.g { background: #f5c542; color: #0b1530; font-size: 30px; font-weight: bold; width: 4%; }
+  table.tt .cls { font-size: 18px; color: #9fd3ff; display: block; }
+  table.tt .sub { font-size: 34px; font-weight: bold; display: block; }
+  .s1 { background: #2e5aa8 !important; } .s2 { background: #a8462e !important; }
+  .s3 { background: #2e8a5a !important; } .s4 { background: #7a3ea8 !important; }
+  .sizes span { display: inline-block; margin-right: 30px; }
+  .webfont { font-family: 'Noto Sans KR', serif; }
+</style>
+</head>
+<body>
+<noscript><div style="font-size:60px;color:#ff6b6b;padding:40px;">자바스크립트가 꺼져 있거나 지원되지 않습니다. (자동 새로고침만 동작하는지 1분 뒤 확인)</div></noscript>
+
+<table class="main top"><tr>
+  <td class="title" style="width:30%;">복도 모니터 테스트 페이지<br><span style="font-size:24px;color:#9fd3ff;">v1 · 1920×1080 기준</span></td>
+  <td class="clock" id="clock">--:--:--</td>
+  <td class="refresh" style="width:30%;">
+    <div>다음 새로고침까지 <b id="countdown">60</b>초</div>
+    <div>새로고침 횟수 <b id="reloads">-</b>회</div>
+    <div id="reloadMethod" style="font-size:22px;">-</div>
+  </td>
+</tr></table>
+
+<table class="main"><tr>
+  <td class="panel" style="width:50%;">
+    <h2>① 기기 정보</h2>
+    <table class="info">
+      <tr><td class="k">기기 날짜·시각</td><td id="devTime">-</td></tr>
+      <tr><td class="k">시간대(UTC+9이면 정상)</td><td id="tz">-</td></tr>
+      <tr><td class="k">화면 크기 (screen)</td><td id="scr">-</td></tr>
+      <tr><td class="k">웹뷰 크기 (window)</td><td id="win">-</td></tr>
+      <tr><td class="k">픽셀 배율</td><td id="dpr">-</td></tr>
+      <tr><td class="k">페이지 주소</td><td id="loc" style="font-size:20px;">-</td></tr>
+      <tr><td class="k">브라우저 정보</td><td class="ua" id="ua">-</td></tr>
+    </table>
+    <h2 style="margin-top:20px;">③ 글자 크기·폰트 확인 (복도에서 읽어 보세요)</h2>
+    <div class="sizes">
+      <span style="font-size:24px;">24px 통합과학</span>
+      <span style="font-size:36px;">36px 통합과학</span>
+      <span style="font-size:48px;">48px 통합과학</span>
+      <span style="font-size:64px;">64px 통합과학</span>
+    </div>
+    <div style="font-size:34px;margin-top:8px;">이모지: ☀️ ⛅ 🌧️ ❄️ 🍚 &nbsp;|&nbsp; <span class="webfont">웹폰트(본고딕) 적용 문장</span></div>
+  </td>
+  <td class="panel" style="width:50%;">
+    <h2>② 기능 지원 여부</h2>
+    <table class="info" id="features"></table>
+  </td>
+</tr></table>
+
+<div class="panel" style="padding-top:0;">
+  <h2>④ 시간표 표시 견본 (3학년 × 8반, 가짜 데이터)</h2>
+  <table class="tt" id="tt"></table>
+</div>
+
+<script>
+(function () {
+  var START = new Date();
+  function $(id) { return document.getElementById(id); }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function setText(id, t) { var e = $(id); if (e) { e.innerHTML = t; } }
+  var DAYS = ['일', '월', '화', '수', '목', '금', '토'];
+
+  // --- 새로고침 기록: localStorage가 없으면 window.name 사용 ---
+  var store = null;
+  try { localStorage.setItem('__t', '1'); localStorage.removeItem('__t'); store = 'ls'; } catch (e) { store = 'name'; }
+  function readState() {
+    var raw = null;
+    try { raw = (store === 'ls') ? localStorage.getItem('hallwayTest') : window.name; } catch (e) {}
+    try { var o = JSON.parse(raw); if (o && typeof o.count === 'number') { return o; } } catch (e) {}
+    return { count: 0, method: '' };
+  }
+  function writeState(o) {
+    var s = JSON.stringify(o);
+    try { if (store === 'ls') { localStorage.setItem('hallwayTest', s); } else { window.name = s; } } catch (e) {}
+  }
+  var state = readState();
+  var lastMethod = state.method;
+  state.count = state.count + 1;
+  state.method = 'meta'; // 다음 새로고침을 meta가 하면 그대로 'meta'로 기록됨
+  writeState(state);
+  setText('reloads', String(state.count - 1));
+  if (state.count === 1) {
+    setText('reloadMethod', '첫 접속 · 1분 뒤 자동 새로고침 확인');
+  } else if (lastMethod === 'js') {
+    setText('reloadMethod', '<span class="wait">meta 새로고침 실패 → JS로 새로고침됨</span>');
+  } else {
+    setText('reloadMethod', '<span class="ok">meta 자동 새로고침 동작함</span>');
+  }
+
+  // --- 시계 · 카운트다운 · meta 실패 시 JS 새로고침 ---
+  function tick() {
+    var d = new Date();
+    setText('clock', pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()));
+    setText('devTime', d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) +
+      ' (' + DAYS[d.getDay()] + ') ' + pad(d.getHours()) + ':' + pad(d.getMinutes()));
+    var el = Math.floor((d.getTime() - START.getTime()) / 1000);
+    var left = 60 - el;
+    setText('countdown', left > 0 ? String(left) : '<span class="ng">0 (안 됨?)</span>');
+    if (el >= 75) {
+      state.method = 'js'; writeState(state);
+      location.reload();
+    }
+  }
+  tick();
+  setInterval(tick, 1000);
+
+  // --- 기기 정보 ---
+  var off = -new Date().getTimezoneOffset() / 60;
+  setText('tz', 'UTC' + (off >= 0 ? '+' : '') + off + (off === 9 ? ' <span class="ok">정상</span>' : ' <span class="ng">확인 필요</span>'));
+  setText('scr', screen.width + ' × ' + screen.height);
+  var ww = window.innerWidth || document.documentElement.clientWidth;
+  var wh = window.innerHeight || document.documentElement.clientHeight;
+  setText('win', ww + ' × ' + wh);
+  setText('dpr', String(window.devicePixelRatio || 1));
+  setText('loc', location.href);
+  setText('ua', navigator.userAgent);
+
+  // --- 기능 지원 테스트 ---
+  var rows = [];
+  function test(name, fn) {
+    var ok = false;
+    try { ok = !!fn(); } catch (e) { ok = false; }
+    rows.push([name, ok ? '<span class="ok">지원</span>' : '<span class="ng">미지원</span>']);
+  }
+  function styleTest(prop, val) {
+    var d = document.createElement('div');
+    try { d.style[prop] = val; } catch (e) { return false; }
+    return d.style[prop] === val;
+  }
+  test('최신 문법 (let, 화살표 함수)', function () { return new Function('let a = () => 1; return a();')() === 1; });
+  test('템플릿 문자열', function () { return new Function('var x=1; return `${x}`;')() === '1'; });
+  test('Promise', function () { return typeof Promise === 'function'; });
+  test('fetch', function () { return typeof window.fetch === 'function'; });
+  test('XMLHttpRequest', function () { return typeof XMLHttpRequest !== 'undefined'; });
+  test('JSON', function () { return typeof JSON === 'object'; });
+  test('localStorage', function () { return store === 'ls'; });
+  test('CSS flex', function () { return styleTest('display', 'flex') || styleTest('display', '-webkit-flex') || styleTest('display', '-webkit-box'); });
+  test('CSS grid', function () { return styleTest('display', 'grid'); });
+  test('CSS 변수', function () { return window.CSS && CSS.supports && CSS.supports('--a', '0'); });
+  test('Intl (날짜 형식)', function () { return typeof Intl === 'object'; });
+
+  // 인터넷 · HTTPS 접속 테스트 (이미지 불러오기)
+  var netTests = [
+    ['인터넷 (https, google)', 'https://www.google.com/favicon.ico'],
+    ['인터넷 (https, naver)', 'https://www.naver.com/favicon.ico'],
+    ['인터넷 (http)', 'http://www.google.com/favicon.ico']
+  ];
+  var base = rows.length;
+  for (var i = 0; i < netTests.length; i++) { rows.push([netTests[i][0], '<span class="wait">확인 중…</span>']); }
+
+  function render() {
+    var h = '';
+    for (var j = 0; j < rows.length; j++) {
+      h += '<tr><td class="k">' + rows[j][0] + '</td><td>' + rows[j][1] + '</td></tr>';
+    }
+    $('features').innerHTML = h;
+  }
+  render();
+
+  function netCheck(idx, url) {
+    var done = false;
+    var img = new Image();
+    function fin(ok) {
+      if (done) { return; } done = true;
+      rows[base + idx][1] = ok ? '<span class="ok">접속됨</span>' : '<span class="ng">실패</span>';
+      render();
+    }
+    img.onload = function () { fin(true); };
+    img.onerror = function () { fin(false); };
+    setTimeout(function () { fin(false); }, 10000);
+    img.src = url + '?t=' + new Date().getTime();
+  }
+  for (var k = 0; k < netTests.length; k++) { netCheck(k, netTests[k][1]); }
+
+  // --- 시간표 견본 ---
+  var subs = [['공통국어', 's2'], ['공통수학', 's1'], ['공통영어', 's4'], ['통합과학', 's3'],
+              ['한국사', 's2'], ['정보', 's1'], ['체육', 's3'], ['음악', 's4'],
+              ['확률과 통계', 's1'], ['물리학', 's3'], ['문학', 's2'], ['동아시아사', 's4']];
+  var h = '';
+  for (var g = 1; g <= 3; g++) {
+    h += '<tr><td class="g">' + g + '학년</td>';
+    for (var c = 1; c <= 8; c++) {
+      var s = subs[(g * 3 + c * 5) % subs.length];
+      h += '<td class="' + s[1] + '"><span class="cls">' + g + '-' + c + '</span><span class="sub">' + s[0] + '</span></td>';
+    }
+    h += '</tr>';
+  }
+  $('tt').innerHTML = h;
+})();
+</script>
+</body>
+</html>
