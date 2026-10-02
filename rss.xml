@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>복도 모니터 RSS 테스트</title>
+    <link>https://hallwaymonitor.vercel.app/</link>
+    <description>단말기 RSS 수신 테스트</description>
+    <language>ko</language>
+    <item>
+      <title>[테스트] RSS 자막 수신 성공</title>
+      <description>이 문장이 보이면 단말기가 서버에서 데이터를 받아오고 있습니다.</description>
+    </item>
+    <item>
+      <title>오늘의 중식: 현미밥 · 된장국 · 제육볶음 · 배추김치</title>
+      <description>급식 표시 견본입니다.</description>
+    </item>
+    <item>
+      <title>수능 D-48 · 중간고사 D-12</title>
+      <description>D-day 표시 견본입니다.</description>
+    </item>
+  </channel>
+</rss>
