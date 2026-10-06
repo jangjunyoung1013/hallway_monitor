@@ -36,7 +36,7 @@ function serviceKey() {
 
 async function getJson(url, label) {
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 8000);
+  const timer = setTimeout(() => ctrl.abort(), 4000);
   try {
     const res = await fetch(url, { signal: ctrl.signal });
     const text = await res.text();
@@ -245,7 +245,9 @@ module.exports = async (req, res) => {
     return;
   }
 
-  const items = titles.map((t) => `    <item>\n      <title>${esc(t)}</title>\n      <description>${esc(t)}</description>\n    </item>`).join('\n');
+  // 오래된 단말기 호환: 특수 단위 기호를 일반 글자로 바꿈
+  const plain = (t) => t.replace(/℃/g, '도').replace(/㎍\/㎥/g, '');
+  const items = titles.map(plain).map((t) => `    <item>\n      <title>${esc(t)}</title>\n      <description>${esc(t)}</description>\n    </item>`).join('\n');
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
   <channel>
@@ -253,13 +255,14 @@ module.exports = async (req, res) => {
     <link>https://${req.headers.host || ''}/</link>
     <description>오늘의 중식 · 날씨 · 미세먼지</description>
     <language>ko</language>
-    <lastBuildDate>${new Date(nowMs).toUTCString()}</lastBuildDate>
 ${items}
   </channel>
 </rss>
 `;
   res.setHeader('Content-Type', 'application/xml; charset=utf-8');
   // Vercel이 10분간 결과를 저장해 두고 재사용 → 공공 API 호출 횟수 절약
-  res.setHeader('Cache-Control', 's-maxage=600, stale-while-revalidate=600');
-  res.status(200).send(xml);
+  res.setHeader('Cache-Control', 's-maxage=600, stale-while-revalidate=3600');
+  const body = Buffer.from(xml, 'utf8');
+  res.setHeader('Content-Length', String(body.length));
+  res.status(200).send(body);
 };
